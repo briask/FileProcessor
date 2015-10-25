@@ -18,7 +18,6 @@ namespace FileProcessor
 
         private BatchFileProcessor()
         {
-
         }
 
         public BatchFileProcessor(string unprocessedFilesPath, string processedFilesPath)
@@ -57,6 +56,7 @@ namespace FileProcessor
             int successfullyProcessed = 0;
             foreach (var filename in allFiles)
             {
+                var shortFilename = new FileInfo(filename).Name;
                 bool success = ProcessFile(filename, fileProcessor);
                 if (success)
                 {
@@ -100,12 +100,12 @@ namespace FileProcessor
                     if (successfulMove)
                     {
                         log.InfoFormat("Success");
-                        return false;
+                        return true;
                     }
                     else
                     {
                         log.ErrorFormat("Unable to process file {0}", fullFileName);
-                        return true;
+                        return false;
                     }
                 }
             }
@@ -122,8 +122,24 @@ namespace FileProcessor
             try
             {
                 var originalfile = new FileInfo(filename);
+                string originalFilename = originalfile.Name;
 
-                var newFileLocation = Path.Combine(this.processedFilesPath, originalfile.Name);
+                var processedTime = DateTime.Now.ToString("yyyy-MM-ddThhmmss");
+                var newFileName = string.Format("{0}.{1}", originalFilename, processedTime);
+
+                var newFileLocation = Path.Combine(this.processedFilesPath, newFileName);
+                if (File.Exists(newFileLocation))
+                {
+                    processedTime = DateTime.Now.ToString("yyyy-MM-ddThhmmss.fff");
+                    newFileName = string.Format("{0}.{1}", originalFilename, processedTime);
+                    newFileLocation = Path.Combine(this.processedFilesPath, newFileName);
+
+                    if (File.Exists(newFileLocation))
+                    {
+                        newFileName = string.Format("{0}.{1}", originalFilename, Guid.NewGuid().ToString("N"));
+                        newFileLocation = Path.Combine(this.processedFilesPath, newFileName);
+                    }
+                }
 
                 originalfile.MoveTo(newFileLocation);
 

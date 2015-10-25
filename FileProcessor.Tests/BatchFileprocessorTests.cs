@@ -13,6 +13,7 @@ namespace FileProcessor.Tests
         private string unprocessedPath;
         private string commonDir;
 
+        #region setup
         public BatchFileprocessorTests()
         {
             var tempPath = Path.GetTempPath();
@@ -64,7 +65,9 @@ namespace FileProcessor.Tests
         {
             return Directory.EnumerateFiles(unprocessedPath).ToList();
         }
+        #endregion
 
+        #region Tests
         [Fact]
         public void ProcessFile_FileExistsProcessed_MovedFile()
         {
@@ -136,29 +139,62 @@ namespace FileProcessor.Tests
             A.CallTo(() => fp.ProcessFile(string.Empty)).MustNotHaveHappened();
         }
 
-        //[Fact]
-        //public void ProcessAllFiles_5Files_5FilesProcessed()
-        //{
-        //    // Arrange
-        //    CreateMultipleTempFiles(5);
-        //    var fileList = GetAllUnprocessedFiles();
+        [Fact]
+        public void ProcessAllFiles_5Files_5FilesProcessed()
+        {
+            // Arrange
+            CreateMultipleTempFiles(5);
+            var fileList = GetAllUnprocessedFiles();
 
-        //    var fp = A.Fake<IFileProcessor>();
-        //    foreach (var filename in fileList)
-        //    {
-        //        A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
-        //    }
-            
-        //    var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
+            var fp = A.Fake<IFileProcessor>();
+            foreach (var filename in fileList)
+            {
+                A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+            }
 
-        //    // Act
-        //    var filesProcessed = sut.ProcessAllFiles(fp);
+            var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
 
-        //    Assert.Equal(5, filesProcessed);
-        //    foreach (var filename in fileList)
-        //    {
-        //        A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
-        //    }
-        //}
+            // Act
+            var filesProcessed = sut.ProcessAllFiles(fp);
+
+            Assert.Equal(5, filesProcessed);
+            foreach (var filename in fileList)
+            {
+                A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
+            }
+
+            Assert.Equal(5, Directory.EnumerateFiles(processedPath).Count());
+        }
+
+        [Fact]
+        public void ProcessAllFiles_5Files_4FilesProcessed1Failed_4Moved_1Remained()
+        {
+            // Arrange
+            CreateMultipleTempFiles(5);
+            var fileList = GetAllUnprocessedFiles();
+
+            var fp = A.Fake<IFileProcessor>();
+            foreach (var filename in fileList.Take(4))
+            {
+                A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+            }
+
+            var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
+
+            // Act
+            var filesProcessed = sut.ProcessAllFiles(fp);
+
+            Assert.Equal(4, filesProcessed);
+            Assert.Equal(1, GetAllUnprocessedFiles().Count());
+            foreach (var filename in fileList.Take(4))
+            {
+                A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
+            }
+
+            Assert.Equal(4, Directory.EnumerateFiles(processedPath).Count());
+            Assert.Equal(1, Directory.EnumerateFiles(unprocessedPath).Count());
+        }
+
+        #endregion
     }
 }
