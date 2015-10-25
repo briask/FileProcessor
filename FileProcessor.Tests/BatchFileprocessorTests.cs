@@ -203,6 +203,38 @@ namespace FileProcessor.Tests
             return data;
         }
 
+        [Fact]
+        public void ProcessAllFiles_5Files_5FilesProcessedNamisFileName()
+        {
+            // Arrange
+            CreateMultipleTempFiles(5);
+            var fileList = GetAllUnprocessedFiles();
+
+            var fp = A.Fake<IFileProcessor>();
+            foreach (var filename in fileList)
+            {
+                A.CallTo(() => fp.ProcessFile(filename)).Returns(CreateMockDataSet1TableNoData());
+            }
+
+            var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
+
+            // Act
+            var filesProcessed = sut.ProcessAllFiles(fp);
+
+            Assert.Equal(5, filesProcessed.Count);
+            foreach (var filename in fileList)
+            {
+                A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
+            }
+
+            foreach (var filename in fileList)
+            {
+                Assert.Contains(filename, filesProcessed.Keys);
+            }
+
+            Assert.Equal(5, Directory.EnumerateFiles(processedPath).Count());
+        }
+
         #endregion
     }
 }

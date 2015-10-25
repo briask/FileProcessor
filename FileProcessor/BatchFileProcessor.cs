@@ -103,6 +103,7 @@ namespace FileProcessor
                     bool successfulMove = MoveFileToProcessedLocation(fullFileName);
                     if (successfulMove)
                     {
+                        data.DataSetName = fullFileName;
                         log.InfoFormat("Success");
                         return data;
                     }
