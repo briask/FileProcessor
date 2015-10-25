@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="BatchFileProcessor.cs" />
     <Compile Include="BatchFileProcessorException.cs" />
+    <Compile Include="ExcelFileProcessor.cs" />
     <Compile Include="IFileProcessor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

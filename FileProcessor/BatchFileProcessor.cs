@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,7 +37,7 @@ namespace FileProcessor
             this.processedFilesPath = processedFilesPath;
         }
 
-        public int ProcessAllFiles(IFileProcessor fileProcessor)
+        public IDictionary<string, DataSet> ProcessAllFiles(IFileProcessor fileProcessor)
         {
             if (fileProcessor == null)
             {
@@ -53,14 +54,17 @@ namespace FileProcessor
             successfullyProcessedFiles = new List<string>();
             unsuccessfullyProcessedFiles = new List<string>();
 
+            var toReturn = new Dictionary<string, DataSet>();
+
             int successfullyProcessed = 0;
             foreach (var filename in allFiles)
             {
                 var shortFilename = new FileInfo(filename).Name;
-                bool success = ProcessFile(filename, fileProcessor);
-                if (success)
+                DataSet data = ProcessFile(filename, fileProcessor);
+                if (data.Tables.Count > 0)
                 {
                     successfullyProcessed++;
+                    toReturn.Add(filename, data);
                     successfullyProcessedFiles.Add(filename);
                 }
                 else
@@ -69,10 +73,10 @@ namespace FileProcessor
                 }
             }
 
-            return successfullyProcessed;
+            return toReturn;
         }
 
-        public bool ProcessFile(string filename, IFileProcessor fileProcessor)
+        public DataSet ProcessFile(string filename, IFileProcessor fileProcessor)
         {
             if (string.IsNullOrWhiteSpace(filename))
             {
@@ -93,19 +97,19 @@ namespace FileProcessor
 
             try
             {
-                bool success = fileProcessor.ProcessFile(fullFileName);
-                if (success)
+                DataSet data = fileProcessor.ProcessFile(fullFileName);
+                if (data.Tables.Count > 0)
                 {
                     bool successfulMove = MoveFileToProcessedLocation(fullFileName);
                     if (successfulMove)
                     {
                         log.InfoFormat("Success");
-                        return true;
+                        return data;
                     }
                     else
                     {
                         log.ErrorFormat("Unable to process file {0}", fullFileName);
-                        return false;
+                        return new DataSet();
                     }
                 }
             }
@@ -114,7 +118,7 @@ namespace FileProcessor
                 log.ErrorFormat("Unable to process file {0} {1}", filename, ex);
             }
 
-            return false;
+            return new DataSet();
         }
 
         private bool MoveFileToProcessedLocation(string filename)

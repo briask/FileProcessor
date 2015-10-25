@@ -1,6 +1,7 @@
 ﻿using FakeItEasy;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -76,7 +77,7 @@ namespace FileProcessor.Tests
             string filename = GetSingleUnprocessedFile();
 
             var fp = A.Fake<IFileProcessor>();
-            A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+            A.CallTo(() => fp.ProcessFile(filename)).Returns(CreateMockDataSet1TableNoData());
             var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
 
             // Act
@@ -84,7 +85,7 @@ namespace FileProcessor.Tests
 
             // Assert
             A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
-            A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+            A.CallTo(() => fp.ProcessFile(filename)).Returns(A<DataSet>.Ignored);
             Assert.Equal(1, Directory.EnumerateFiles(processedPath).Count());
         }
 
@@ -96,7 +97,7 @@ namespace FileProcessor.Tests
             string filename = GetSingleUnprocessedFile();
 
             var fp = A.Fake<IFileProcessor>();
-            A.CallTo(() => fp.ProcessFile(filename)).Returns(false);
+            A.CallTo(() => fp.ProcessFile(filename)).Returns(new DataSet());
             var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
 
             // Act
@@ -104,7 +105,6 @@ namespace FileProcessor.Tests
 
             // Assert
             A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
-            A.CallTo(() => fp.ProcessFile(filename)).Returns(false);
             Assert.Equal(1, Directory.EnumerateFiles(unprocessedPath).Count());
         }
 
@@ -116,7 +116,7 @@ namespace FileProcessor.Tests
             string filename = GetSingleUnprocessedFile();
 
             var fp = A.Fake<IFileProcessor>();
-            A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+            A.CallTo(() => fp.ProcessFile(filename)).Returns(A<DataSet>.Ignored);
             var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
 
             // Act
@@ -129,13 +129,13 @@ namespace FileProcessor.Tests
         {
             // Arrange
             var fp = A.Fake<IFileProcessor>();
-            A.CallTo(() => fp.ProcessFile(string.Empty)).Returns(true);
+            A.CallTo(() => fp.ProcessFile(string.Empty)).Returns(A<DataSet>.Ignored);
             var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
 
             // Act
             var filesProcessed = sut.ProcessAllFiles(fp);
             
-            Assert.Equal(0, filesProcessed);
+            Assert.Equal(0, filesProcessed.Count);
             A.CallTo(() => fp.ProcessFile(string.Empty)).MustNotHaveHappened();
         }
 
@@ -149,7 +149,7 @@ namespace FileProcessor.Tests
             var fp = A.Fake<IFileProcessor>();
             foreach (var filename in fileList)
             {
-                A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+                A.CallTo(() => fp.ProcessFile(filename)).Returns(CreateMockDataSet1TableNoData());
             }
 
             var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
@@ -157,7 +157,7 @@ namespace FileProcessor.Tests
             // Act
             var filesProcessed = sut.ProcessAllFiles(fp);
 
-            Assert.Equal(5, filesProcessed);
+            Assert.Equal(5, filesProcessed.Count);
             foreach (var filename in fileList)
             {
                 A.CallTo(() => fp.ProcessFile(filename)).MustHaveHappened();
@@ -176,7 +176,7 @@ namespace FileProcessor.Tests
             var fp = A.Fake<IFileProcessor>();
             foreach (var filename in fileList.Take(4))
             {
-                A.CallTo(() => fp.ProcessFile(filename)).Returns(true);
+                A.CallTo(() => fp.ProcessFile(filename)).Returns(CreateMockDataSet1TableNoData());
             }
 
             var sut = new BatchFileProcessor(this.unprocessedPath, this.processedPath);
@@ -184,7 +184,7 @@ namespace FileProcessor.Tests
             // Act
             var filesProcessed = sut.ProcessAllFiles(fp);
 
-            Assert.Equal(4, filesProcessed);
+            Assert.Equal(4, filesProcessed.Count);
             Assert.Equal(1, GetAllUnprocessedFiles().Count());
             foreach (var filename in fileList.Take(4))
             {
@@ -193,6 +193,14 @@ namespace FileProcessor.Tests
 
             Assert.Equal(4, Directory.EnumerateFiles(processedPath).Count());
             Assert.Equal(1, Directory.EnumerateFiles(unprocessedPath).Count());
+        }
+
+        private DataSet CreateMockDataSet1TableNoData()
+        {
+            var data = new DataSet();
+            data.Tables.Add(new DataTable());
+
+            return data;
         }
 
         #endregion
